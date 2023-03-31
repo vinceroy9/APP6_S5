@@ -120,9 +120,9 @@ rho0 = exp(b_m(1))  % rho0 = 0.020 kg/m^3 selon google
 
 % 4.  Calcul de l'erreur RMS et R2
 % RMS
-a_approx = (S*CD0)/m * 1/2*rho0*exp(-h_simp/hs).*v_trap(1:2:end).^2;
-E = sum((a_approx-acc_mes(1:2:end)').^2);
-RMS_a = sqrt(1/length(acc_mes(1:2:end)) * E)   % NOTE : RMS de l'acceleration
+g = (S*CD0) * 1/2*rho0*exp(-h_simp/hs).*v_trap(1:2:end).^2;
+E = sum((g-Pdyn(1:2:end)').^2);
+RMS_a = sqrt(1/length(Pdyn(1:2:end)) * E)   % NOTE : RMS de l'acceleration
 
 % NOTE : R2 TOUJOURS calculée dans le domaine linéaire (Y,X)
 Y_calc = log(rho0*exp(-h_simp/hs));
@@ -131,12 +131,3 @@ R2 = sum((Y_calc-mean(Y)).^2)/sum((Y-mean(Y)).^2)
 
 % 5. Comparaison avec bruit de l'accelerometre + RMS absolue (a_mes-a_approx)
 % et (a_mes-a_approx)/a_mes
-
-% ????????????
-
-
-%% Validation de la RAA
-
-
-
-
