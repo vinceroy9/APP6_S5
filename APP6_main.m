@@ -68,6 +68,10 @@ ylabel('Accélération (D_{aéro} / m) en [m/s^2]')
 legend('Points mesurés','Location','NorthWest')
 title('Mesures accélérométriques de la NASA avec \gamma = -90 deg')
 
+
+
+
+
 % Intégrons les données pour obtenir v(h). On cherche donc deux set de
 % données qui donne des v et des h pour des temps identiques qu'on met
 % ensemble par la suite. a->v par Trapeze et v->h par Simpson. Int
@@ -75,10 +79,11 @@ title('Mesures accélérométriques de la NASA avec \gamma = -90 deg')
 % 1. Trapèze:
 v_trap(1) = 0;  %Initialisation du vecteur
 dt = t(2)-t(1);
+%dt = (t(end) - t(1))/length(t)
 for n = 2:length(acc_mes)
     v_trap(n) = dt/2 * (acc_mes(1) + acc_mes(n) + 2*sum(acc_mes(2:n-1)));
 end
-v_trap = v_trap + v_ini_nasa; % Pour ajouter la vitesse initiale à t = 0;
+v_trap = -v_trap + v_ini_nasa; % Pour ajouter la vitesse initiale à t = 0;
 
 % Erreur sur trapeze
 fpa_v = (acc_mes(2)-acc_mes(1))/dt; 
@@ -95,8 +100,8 @@ end
 h_simp = h_simp + h_ini_nasa; % Pour ajouter la hauteur initiale à t = 0;
 
 % Erreur sur Simpson
-fpppa_h = ( v_trap(4) - 3*v_trap(3) + 3*v_trap(2) - v_trap(1) )/dt^3; 
-fpppb_h = ( v_trap(end) - 3*v_trap(end-1) + 3*v_trap(end-2) - v_trap(end-3) )/dt^3;
+fpppa_h = ( -v_trap(4) - -3*v_trap(3) + -3*v_trap(2) - -v_trap(1) )/dt^3; 
+fpppb_h = ( -v_trap(end) - -3*v_trap(end-1) + -3*v_trap(end-2) - -v_trap(end-3) )/dt^3;
 err_h = abs(dt^4/180 * (fpppb_h - fpppa_h));
 
 % Les paires de données sont donc v_trap(1:2:end) et h_simp pour t_simp (ou
@@ -110,10 +115,6 @@ X = h_simp';
 
 b_m = inv([length(X),sum(X);sum(X),sum(X.^2)])*[sum(Y);sum(Y.*X)];
 
-hs = -1/b_m(2)  % Pas bon car hs = 11100 [m] ou 1.11e4 [km] selon google
-rho0 = exp(b_m(1)) % Pas bon car rho0 = 0.020 kg/m^3
-
-% L'erreur vient de l'intégrale de simpson je crois et de la décimation...
-% changement de signe dans h_simp...
-
+hs = -1/b_m(2)      % hs = 11100 [m] ou 1.11e4 [km] selon google
+rho0 = exp(b_m(1))  % rho0 = 0.020 kg/m^3 selon google
 
