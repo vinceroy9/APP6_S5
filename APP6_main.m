@@ -85,6 +85,9 @@ for n = 2:length(acc_mes)
 end
 v_trap = -v_trap + v_ini_nasa; % Pour ajouter la vitesse initiale à t = 0;
 
+figure
+plot(t, v_trap)
+
 % Erreur sur trapeze
 fpa_v = (acc_mes(2)-acc_mes(1))/dt; 
 fpb_v = (acc_mes(end)-acc_mes(end-1))/dt; 
@@ -126,7 +129,7 @@ RMS_a = sqrt(1/length(acc_mes(1:2:end)) * E)   % NOTE : RMS de l'acceleration
 
 % NOTE : R2 TOUJOURS calculée dans le domaine linéaire (Y,X)
 Y_calc = log(rho0*exp(-h_simp/hs));
-R2 = sum((Y_calc-mean(Y)).^2)/sum((Y-mean(Y)).^2)
+R2 = sum((Y_calc-mean(Y)).^2)/sum((Y-mean(Y)).^2);
 
 
 % 5. Comparaison avec bruit de l'accelerometre + RMS absolue (a_mes-a_approx)
@@ -157,13 +160,40 @@ legend('v(h)','RAA','Location','NorthWest')
 % sur celui-ci. Note: Ce Pdyn sera en fonction de h et le delta_t_lim sera
 % fait a partir du delta_h trouver par newton-rhapson.
 
+
 % 0. Calcu de delta_v_aero
-%delta_v_aero = ;
+% delta_v_aero1 = v_fin1 - sqrt(v_raa.^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1./(h_raa+R_mars)));
+% delta_v_aero2 = v_fin2 - sqrt(v_raa.^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1./(h_raa+R_mars)));
+
+delta_v_aero1 = v_fin1 - sqrt(v_ini^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1/(h_ini+R_mars)));
+delta_v_aero2 = v_fin2 - sqrt(v_ini^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1/(h_ini+R_mars)));
 
 % 1. Calcul de l'angle gamma_ref pour les deux vitesse terminales
-%gamma_ref1 = ;
-%gamma_ref2 = ;
 
+% Rho final utilisé dans les calculs de gamma ref
+rho_fin = rho0*exp(-h_fin/hs);
+
+gamma_ref1 = asind(0.5*B*hs*(rho_fin - rho_raa_ini)/(log(1 + delta_v_aero1/v_ini))); 
+gamma_ref2 = asind(0.5*B*hs*(rho_fin - rho_raa_ini)/(log(1 + delta_v_aero2/v_ini))); 
+
+% Ça c'est le vecteur avec tous les gamma ref calculés mais je sais pas
+% lequel je dois prendre tho (PER PHILIPPE, PRENDRE LE INITIAL)
+% gamma_ref1 = asind(0.5*B*hs*(rho_fin - rho_raa)./(log(1 + delta_v_aero1./v_raa)));
+% gamma_ref2 = asind(0.5*B*hs*(rho_fin - rho_raa)./(log(1 + delta_v_aero2./v_raa)));
+
+% Je refais le vecteur de v avec la raa
+v_raa_ref1 =  v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref1));
+v_raa_ref2 =  v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref2));
+
+Pdyn_ref1 = 1/2* rho_raa .* v_raa_ref1.^2;
+Pdyn_max1 = max(Pdyn_ref1);
+
+Pdyn_ref2 = 1/2* rho_raa .* v_raa_ref2.^2;
+Pdyn_max2 = max(Pdyn_ref2); % ON EST GOOD C'EST EN BAS DE 9500
+
+% 2. Newton-Raphson 
+
+% Je suis rendu ici :') (2023-04-01 18:03)
 
 
 
