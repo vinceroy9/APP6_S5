@@ -32,14 +32,14 @@ q_ini = 0.0;            % deg/s     !!!
 
 % ======== Condition finales désirées ======== %
 
-v_fin = 250;            % m/s       OU
-%v_fin = 300;           % m/s
+v_fin1 = 250;           % m/s       
+v_fin2 = 300;           % m/s
 h_fin = 10000;          % m
 
 % ======== Contraintes ======== %
 
-% Delta_t_lim (D_aero > 2650 N) <= 40 s
-% P_dyn_max <= 9500 N/m^2
+Delta_t_lim = 40;        % s
+P_dyn_max = 9500;        % N/m^2
 % │theta_cmd│ < 60 deg
 
 
@@ -56,8 +56,8 @@ q_ini_nasa = 0.0;           % deg/s
 
 
 % ======== Bruit de mesure et Paramètre Balistique ======== %
-sigma_n = 0.035; % ??? car sigma_n((a_mes-a_approx)/a_mes) donc mult ???
-
+sigma_n = 0.035;            % ??? car sigma_n((a_mes-a_approx)/a_mes) donc mult ???
+B = CD0*S/m;                % m^2/kg
 
 %% Identification
 
@@ -136,6 +136,36 @@ R2 = sum((Y_calc-mean(Y)).^2)/sum((Y-mean(Y)).^2)
 
 
 %% Validation de la RAA
+h_raa = linspace(h_simp(1),h_simp(end),1e4);
+
+rho_raa = 1/2 * rho0 * exp(-h_raa/hs);
+rho_raa_ini = 1/2 * rho0 * exp(-h_ini_nasa/hs);
+v_raa = v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)/sind(gamma_ini_nasa));
+
+figure(2)
+plot(h_simp,v_trap(1:2:end),'xb')
+hold on
+plot(h_raa,v_raa,'r')
+hold off
+xlabel('Altidude h [m]')
+ylabel('Vitesse v [m/s]')
+legend('v(h)','RAA','Location','NorthWest')
+
+%% Vérification des limites structurelle de la capsule
+
+% Exprimons la courbe Pdyn avec RAA+gravité et appliquons Newton-Rhapson
+% sur celui-ci. Note: Ce Pdyn sera en fonction de h et le delta_t_lim sera
+% fait a partir du delta_h trouver par newton-rhapson.
+
+% 0. Calcu de delta_v_aero
+%delta_v_aero = ;
+
+% 1. Calcul de l'angle gamma_ref pour les deux vitesse terminales
+%gamma_ref1 = ;
+%gamma_ref2 = ;
+
+
+
 
 
 
