@@ -40,6 +40,7 @@ h_fin = 10000;          % m
 
 Delta_t_lim = 40;        % s
 P_dyn_max = 9500;        % N/m^2
+D_aero_max = 2650;       % N (pas dépasser ça plus que 40s)
 % │theta_cmd│ < 60 deg
 
 
@@ -185,17 +186,61 @@ gamma_ref2 = asind(0.5*B*hs*(rho_fin - rho_raa_ini)/(log(1 + delta_v_aero2/v_ini
 v_raa_ref1 =  v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref1));
 v_raa_ref2 =  v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref2));
 
-Pdyn_ref1 = 1/2* rho_raa .* v_raa_ref1.^2;
-Pdyn_max1 = max(Pdyn_ref1);
+P_dyn_ref1 = 1/2* rho_raa .* v_raa_ref1.^2;
+P_dyn_max1 = max(P_dyn_ref1);
 
-Pdyn_ref2 = 1/2* rho_raa .* v_raa_ref2.^2;
-Pdyn_max2 = max(Pdyn_ref2); % ON EST GOOD C'EST EN BAS DE 9500
+P_dyn_ref2 = 1/2* rho_raa .* v_raa_ref2.^2;
+P_dyn_max2 = max(P_dyn_ref2); % ON EST GOOD C'EST EN BAS DE 9500
 
 % 2. Newton-Raphson 
+tol = 1e-10; % Donnée dans guide étudiant
 
-% Je suis rendu ici :') (2023-04-01 18:03)
+% Renommée pour être conséquent dans la nomenclature
+h_NR1 = h_ini;
 
+% rho est fonction de h
+rho_NR1 = 1/2 * rho0 * exp(-h_NR1/hs);
 
+% v aussi fonction de h (Pour RAA)
+v_NR1 = v_ini_nasa * exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
+
+% donc Pdyn est fonction de h
+Pdyn_NR1 = 1/2*rho_NR1*v_NR1^2;
+
+% donc Daero aussi
+D_aero_NR1 = Pdyn_NR1*S*CD0;
+
+% On veut les valeurs qui croisent Daero max
+F_NR1 = D_aero_NR1 - D_aero_max;
+
+% Parties de la dérivée utilisée plus tard
+D_NR1_rho = (-rho0/hs)*exp(-h_NR1/hs);
+D_NR1_v2 = ((-rho0*v_ini_nasa^2*exp(-h_NR1/hs))/(sind(gamma_ref1)*hs))* ...
+            exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
+        
+% Dérivée de Daero par rapport à h 
+D_NR1 = S*CD0 * (D_NR1_rho*v_NR1^2) + (rho_NR1*D_NR1_v2);
+
+% Itérations Newton Raphson
+count = 0;
+while abs(F_NR1) > tol
+    h_NR1 = h_NR1 - F_NR1/D_NR1;
+    rho_NR1 = 1/2 * rho0 * exp(-h_NR1/hs);
+    v_NR1 = v_ini_nasa * exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
+    Pdyn_NR1 = 1/2*rho_NR1*v_NR1^2;
+    D_aero_NR1 = Pdyn_NR1*S*CD0;
+    F_NR1 = D_aero_NR1 - D_aero_max;
+    D_NR1_rho = (-rho0/hs)*exp(-h_NR1/hs);
+    D_NR1_v2 = ((-rho0*v_ini_nasa^2*exp(-h_NR1/hs))/(sind(gamma_ref1)*hs))* ...
+                exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
+    D_NR1 = S*CD0 * (D_NR1_rho*v_NR1^2) + (rho_NR1*D_NR1_v2);
+    count = count + 1;
+    if count > 500
+        break;
+    end
+end
+
+% Surement erreur dans dérivée à voir (22h43 samedi)
 
 
 
