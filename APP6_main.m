@@ -86,8 +86,8 @@ for n = 2:length(acc_mes)
 end
 v_trap = -v_trap + v_ini_nasa; % Pour ajouter la vitesse initiale à t = 0;
 
-figure
-plot(t, v_trap)
+% figure
+% plot(t, v_trap)
 
 % Erreur sur trapeze
 fpa_v = (acc_mes(2)-acc_mes(1))/dt; 
@@ -142,8 +142,8 @@ R2 = sum((Y_calc-mean(Y)).^2)/sum((Y-mean(Y)).^2);
 %% Validation de la RAA
 h_raa = linspace(h_simp(1),h_simp(end),1e4);
 
-rho_raa = 1/2 * rho0 * exp(-h_raa/hs);
-rho_raa_ini = 1/2 * rho0 * exp(-h_ini_nasa/hs);
+rho_raa = rho0 * exp(-h_raa/hs);
+rho_raa_ini = rho0 * exp(-h_ini_nasa/hs);
 v_raa = v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)/sind(gamma_ini_nasa));
 
 figure(2)
@@ -163,85 +163,253 @@ legend('v(h)','RAA','Location','NorthWest')
 
 
 % 0. Calcu de delta_v_aero
-% delta_v_aero1 = v_fin1 - sqrt(v_raa.^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1./(h_raa+R_mars)));
-% delta_v_aero2 = v_fin2 - sqrt(v_raa.^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1./(h_raa+R_mars)));
-
 delta_v_aero1 = v_fin1 - sqrt(v_ini^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1/(h_ini+R_mars)));
 delta_v_aero2 = v_fin2 - sqrt(v_ini^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1/(h_ini+R_mars)));
 
 % 1. Calcul de l'angle gamma_ref pour les deux vitesse terminales
-
 % Rho final utilisé dans les calculs de gamma ref
 rho_fin = rho0*exp(-h_fin/hs);
 
+% Calculs gamma refs
 gamma_ref1 = asind(0.5*B*hs*(rho_fin - rho_raa_ini)/(log(1 + delta_v_aero1/v_ini))); 
 gamma_ref2 = asind(0.5*B*hs*(rho_fin - rho_raa_ini)/(log(1 + delta_v_aero2/v_ini))); 
 
-% Ça c'est le vecteur avec tous les gamma ref calculés mais je sais pas
-% lequel je dois prendre tho (PER PHILIPPE, PRENDRE LE INITIAL)
-% gamma_ref1 = asind(0.5*B*hs*(rho_fin - rho_raa)./(log(1 + delta_v_aero1./v_raa)));
-% gamma_ref2 = asind(0.5*B*hs*(rho_fin - rho_raa)./(log(1 + delta_v_aero2./v_raa)));
+% Je refais les vecteurs de v avec la raa
+v_raa_ref1 =  v_ini_nasa * exp((1/2) * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref1));
+v_raa_ref2 =  v_ini_nasa * exp((1/2) * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref2));
 
-% Je refais le vecteur de v avec la raa
-v_raa_ref1 =  v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref1));
-v_raa_ref2 =  v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)./sind(gamma_ref2));
+% Pour vfin1 = 250 m/s
+P_dyn_ref1 = (1/2)* rho_raa .* v_raa_ref1.^2;
+D_aero_ref1 = P_dyn_ref1*S*CD0;
+P_dyn_max1 = max(P_dyn_ref1); % ON EST GOOD C'EST EN BAS DE 9500
+% F_ref1 = D_aero_ref1 - D_aero_max;
 
-P_dyn_ref1 = 1/2* rho_raa .* v_raa_ref1.^2;
-P_dyn_max1 = max(P_dyn_ref1);
-
-P_dyn_ref2 = 1/2* rho_raa .* v_raa_ref2.^2;
+% Pour vfin2 = 300 m/s
+P_dyn_ref2 = (1/2)* rho_raa .* v_raa_ref2.^2;
+D_aero_ref2 = P_dyn_ref2*S*CD0;
 P_dyn_max2 = max(P_dyn_ref2); % ON EST GOOD C'EST EN BAS DE 9500
 
-% 2. Newton-Raphson 
+% Affichage des Daero en fonction de l'altitde
+figure
+plot(h_raa, D_aero_ref1)
+hold on
+plot(h_raa, ones(length(h_raa), 1)*D_aero_max)
+title('Daero selon altitude :  vfin = 250 m/s')
+xlabel('Altitude h [m]')
+ylabel('Trainee Daero [N]') 
+hold off
+
+figure
+plot(h_raa, D_aero_ref2)
+hold on
+plot(h_raa, ones(length(h_raa), 1)*D_aero_max)
+title('Daero selon altitude :  vfin = 300 m/s')
+xlabel('Altitude h [m]')
+ylabel('Trainee Daero [N]') 
+hold off
+
+% 2. Newton-Raphson
 tol = 1e-10; % Donnée dans guide étudiant
 
-% Renommée pour être conséquent dans la nomenclature
-h_NR1 = h_ini;
+% =======================     VFIN1 = 250 m/s   ========================= %
+% ===================     c'est avec gamma_ref_1   ====================== %
+% points de départ des itérations, voir graph pour comprendre
+h_vfin1_1 = 19000; 
+h_vfin1_2 = 40000; 
 
 % rho est fonction de h
-rho_NR1 = 1/2 * rho0 * exp(-h_NR1/hs);
+rho_vfin1_1 = rho0 * exp(-h_vfin1_1/hs);
+rho_vfin1_2 = rho0 * exp(-h_vfin1_2/hs);
 
 % v aussi fonction de h (Pour RAA)
-v_NR1 = v_ini_nasa * exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
+v_vfin1_1 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin1_1 - rho_raa_ini)/sind(gamma_ref1));
+v_vfin1_2 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin1_2 - rho_raa_ini)/sind(gamma_ref1));
 
 % donc Pdyn est fonction de h
-Pdyn_NR1 = 1/2*rho_NR1*v_NR1^2;
+Pdyn_vfin1_1 = (1/2)*rho_vfin1_1*v_vfin1_1^2;
+Pdyn_vfin1_2 = (1/2)*rho_vfin1_2*v_vfin1_2^2;
 
 % donc Daero aussi
-D_aero_NR1 = Pdyn_NR1*S*CD0;
+D_aero_vfin1_1 = Pdyn_vfin1_1*S*CD0;
+D_aero_vfin1_2 = Pdyn_vfin1_2*S*CD0;
 
 % On veut les valeurs qui croisent Daero max
-F_NR1 = D_aero_NR1 - D_aero_max;
+F_vfin1_1 = D_aero_vfin1_1 - D_aero_max;
+F_vfin1_2 = D_aero_vfin1_2 - D_aero_max;
 
-% Parties de la dérivée utilisée plus tard
-D_NR1_rho = (-rho0/hs)*exp(-h_NR1/hs);
-D_NR1_v2 = ((-rho0*v_ini_nasa^2*exp(-h_NR1/hs))/(sind(gamma_ref1)*hs))* ...
-            exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
-        
-% Dérivée de Daero par rapport à h 
-D_NR1 = S*CD0 * (D_NR1_rho*v_NR1^2) + (rho_NR1*D_NR1_v2);
+% Dérivée de Daero par rapport à h (un peu dégueulasse)
+% Je l'ai split en parties
+diff_rho_vfin1_1 = (-rho0/hs)*exp(-h_vfin1_1/hs);
+diff_v2_vfin1_1 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref1)*hs)) * exp(-h_vfin1_1/hs) * exp(B*hs*(rho_vfin1_1-rho_raa_ini)/sind(gamma_ref1));
+
+diff_rho_vfin1_2 = (-rho0/hs)*exp(-h_vfin1_2/hs);
+diff_v2_vfin1_2 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref1)*hs)) * exp(-h_vfin1_2/hs) * exp(B*hs*(rho_vfin1_2-rho_raa_ini)/sind(gamma_ref1));
+
+% Voici le résultat
+D_vfin1_1 = (S*CD0/2)*(diff_rho_vfin1_1*v_vfin1_1^2 + diff_v2_vfin1_1*rho_vfin1_1);
+D_vfin1_2 = (S*CD0/2)*(diff_rho_vfin1_1*v_vfin1_2^2 + diff_v2_vfin1_2*rho_vfin1_2);
 
 % Itérations Newton Raphson
-count = 0;
-while abs(F_NR1) > tol
-    h_NR1 = h_NR1 - F_NR1/D_NR1;
-    rho_NR1 = 1/2 * rho0 * exp(-h_NR1/hs);
-    v_NR1 = v_ini_nasa * exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
-    Pdyn_NR1 = 1/2*rho_NR1*v_NR1^2;
-    D_aero_NR1 = Pdyn_NR1*S*CD0;
-    F_NR1 = D_aero_NR1 - D_aero_max;
-    D_NR1_rho = (-rho0/hs)*exp(-h_NR1/hs);
-    D_NR1_v2 = ((-rho0*v_ini_nasa^2*exp(-h_NR1/hs))/(sind(gamma_ref1)*hs))* ...
-                exp(1/2*B*hs*(rho_NR1 - rho_raa_ini)/sind(gamma_ref1));
-    D_NR1 = S*CD0 * (D_NR1_rho*v_NR1^2) + (rho_NR1*D_NR1_v2);
-    count = count + 1;
-    if count > 500
+% Premier h 
+count1 = 0;
+while abs(F_vfin1_1) > tol
+    % Nouveau h selon Newton-Raphson
+    h_vfin1_1 = h_vfin1_1 - F_vfin1_1/D_vfin1_1;
+    
+    % Recalcul avec ce h -> rho -> v -> Pdyn -> Daero -> F ->dérivée Daero
+    rho_vfin1_1 = rho0 * exp(-h_vfin1_1/hs);
+    v_vfin1_1 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin1_1 - rho_raa_ini)/sind(gamma_ref1));
+    Pdyn_vfin1_1 = 1/2*rho_vfin1_1*v_vfin1_1^2;
+    D_aero_vfin1_1 = Pdyn_vfin1_1*S*CD0;
+    F_vfin1_1 = D_aero_vfin1_1 - D_aero_max;
+    
+    % Partie utilisée dans dérivée
+    diff_rho_vfin1_1 = (-rho0/hs)*exp(-h_vfin1_1/hs);
+    diff_v2_vfin1_1 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref1)*hs)) * exp(-h_vfin1_1/hs) * exp(B*hs*(rho_vfin1_1-rho_raa_ini)/sind(gamma_ref1));
+    
+    D_vfin1_1 = (S*CD0/2)*(diff_rho_vfin1_1*v_vfin1_1^2 + diff_v2_vfin1_1*rho_vfin1_1);
+    
+    % Compteur pour éviter boucle infinie
+    count1 = count1 + 1;
+    if count1 > 500
         break;
     end
 end
 
-% Surement erreur dans dérivée à voir (22h43 samedi)
+% Deuxieme h 
+count2 = 0;
+while abs(F_vfin1_2) > tol
+    % Nouveau h selon Newton-Raphson
+    h_vfin1_2 = h_vfin1_2 - F_vfin1_2/D_vfin1_2;
+    
+    % Recalcul avec ce h -> rho -> v -> Pdyn -> Daero -> F ->dérivée Daero
+    rho_vfin1_2 = rho0 * exp(-h_vfin1_2/hs);
+    v_vfin1_2 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin1_2 - rho_raa_ini)/sind(gamma_ref1));
+    Pdyn_vfin1_2 = 1/2*rho_vfin1_2*v_vfin1_2^2;
+    D_aero_vfin1_2 = Pdyn_vfin1_2*S*CD0;
+    F_vfin1_2 = D_aero_vfin1_2 - D_aero_max;
+    
+    % Partie utilisée dans dérivée
+    diff_rho_vfin1_2 = (-rho0/hs)*exp(-h_vfin1_2/hs);
+    diff_v2_vfin1_2 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref1)*hs)) * exp(-h_vfin1_2/hs) * exp(B*hs*(rho_vfin1_2-rho_raa_ini)/sind(gamma_ref1));
+    
+    D_vfin1_2 = (S*CD0/2)*(diff_rho_vfin1_2*v_vfin1_2^2 + diff_v2_vfin1_2*rho_vfin1_2);
+    
+    % Compteur pour éviter boucle infinie
+    count2 = count2 + 1;
+    if count2 > 500
+        break;
+    end
+end
 
+% Vérification de la dérivée
+% for i = 1 : length(F_ref1)-1
+%     diff_approx(i) = (F_ref1(i+1) - F_ref1(i))/(h_raa(2)-h_raa(1));
+%     
+%     diff_rho = (-rho0/hs)*exp(-h_raa(i)/hs);
+%     diff_v2 = ((-B*hs*rho0*v_ini_nasa^2)/(sind(gamma_ref1)*hs)) * exp(-h_raa(i)/hs) * exp(B*hs*(rho_raa(i)-rho_raa_ini)/sind(gamma_ref1));
+%     
+%     D_NR1(i) = (S*CD0/2)*(diff_rho*v_raa_ref1(i)^2 + diff_v2*rho_raa(i));
+% end
 
+% Graph dérivée et approximation 
+% figure
+% plot(h_raa(1:end-1), D_NR1)
+% hold on
+% plot(h_raa(1:end-1), diff_approx)
+% legend('Dérivée trouvée analytiquement', 'Dérivée approx.')
+% title('Comparaison des dérivées')
 
+% =======================     VFIN1 = 300 m/s   ========================= %
+% ===================     c'est avec gamma_ref_2   ====================== %
+% points de départ des itérations, voir graph pour comprendre
+h_vfin2_1 = 19000; 
+h_vfin2_2 = 40000; 
+
+% rho est fonction de h
+rho_vfin2_1 = rho0 * exp(-h_vfin2_1/hs);
+rho_vfin2_2 = rho0 * exp(-h_vfin2_2/hs);
+
+% v aussi fonction de h (Pour RAA)
+v_vfin2_1 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin2_1 - rho_raa_ini)/sind(gamma_ref2));
+v_vfin2_2 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin2_2 - rho_raa_ini)/sind(gamma_ref2));
+
+% donc Pdyn est fonction de h
+Pdyn_vfin2_1 = (1/2)*rho_vfin2_1*v_vfin2_1^2;
+Pdyn_vfin2_2 = (1/2)*rho_vfin2_2*v_vfin2_2^2;
+
+% donc Daero aussi
+D_aero_vfin2_1 = Pdyn_vfin2_1*S*CD0;
+D_aero_vfin2_2 = Pdyn_vfin2_2*S*CD0;
+
+% On veut les valeurs qui croisent Daero max
+F_vfin2_1 = D_aero_vfin2_1 - D_aero_max;
+F_vfin2_2 = D_aero_vfin2_2 - D_aero_max;
+
+% Dérivée de Daero par rapport à h (un peu dégueulasse)
+% Je l'ai split en parties
+diff_rho_vfin2_1 = (-rho0/hs)*exp(-h_vfin2_1/hs);
+diff_v2_vfin2_1 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref2)*hs)) * exp(-h_vfin2_1/hs) * exp(B*hs*(rho_vfin2_1-rho_raa_ini)/sind(gamma_ref2));
+
+diff_rho_vfin2_2 = (-rho0/hs)*exp(-h_vfin2_2/hs);
+diff_v2_vfin2_2 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref2)*hs)) * exp(-h_vfin2_2/hs) * exp(B*hs*(rho_vfin2_2-rho_raa_ini)/sind(gamma_ref2));
+
+% Voici le résultat
+D_vfin2_1 = (S*CD0/2)*(diff_rho_vfin2_1*v_vfin2_1^2 + diff_v2_vfin2_1*rho_vfin2_1);
+D_vfin2_2 = (S*CD0/2)*(diff_rho_vfin2_1*v_vfin2_2^2 + diff_v2_vfin2_2*rho_vfin2_2);
+
+% Itérations Newton Raphson
+% Premier h 
+count3 = 0;
+while abs(F_vfin2_1) > tol
+    % Nouveau h selon Newton-Raphson
+    h_vfin2_1 = h_vfin2_1 - F_vfin2_1/D_vfin2_1;
+    
+    % Recalcul avec ce h -> rho -> v -> Pdyn -> Daero -> F ->dérivée Daero
+    rho_vfin2_1 = rho0 * exp(-h_vfin2_1/hs);
+    v_vfin2_1 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin2_1 - rho_raa_ini)/sind(gamma_ref2));
+    Pdyn_vfin2_1 = 1/2*rho_vfin2_1*v_vfin2_1^2;
+    D_aero_vfin2_1 = Pdyn_vfin2_1*S*CD0;
+    F_vfin2_1 = D_aero_vfin2_1 - D_aero_max;
+    
+    % Partie utilisée dans dérivée
+    diff_rho_vfin2_1 = (-rho0/hs)*exp(-h_vfin2_1/hs);
+    diff_v2_vfin2_1 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref2)*hs)) * exp(-h_vfin2_1/hs) * exp(B*hs*(rho_vfin2_1-rho_raa_ini)/sind(gamma_ref2));
+    
+    D_vfin2_1 = (S*CD0/2)*(diff_rho_vfin2_1*v_vfin2_1^2 + diff_v2_vfin2_1*rho_vfin2_1);
+    
+    % Compteur pour éviter boucle infinie
+    count3 = count3 + 1;
+    if count3 > 500
+        break;
+    end
+end
+
+% Deuxieme h 
+count4 = 0;
+while abs(F_vfin2_2) > tol
+    % Nouveau h selon Newton-Raphson
+    h_vfin2_2 = h_vfin2_2 - F_vfin2_2/D_vfin2_2;
+    
+    % Recalcul avec ce h -> rho -> v -> Pdyn -> Daero -> F ->dérivée Daero
+    rho_vfin2_2 = rho0 * exp(-h_vfin2_2/hs);
+    v_vfin2_2 = v_ini_nasa * exp(1/2*B*hs*(rho_vfin2_2 - rho_raa_ini)/sind(gamma_ref2));
+    Pdyn_vfin2_2 = 1/2*rho_vfin2_2*v_vfin2_2^2;
+    D_aero_vfin2_2 = Pdyn_vfin2_2*S*CD0;
+    F_vfin2_2 = D_aero_vfin2_2 - D_aero_max;
+    
+    % Partie utilisée dans dérivée
+    diff_rho_vfin2_2 = (-rho0/hs)*exp(-h_vfin2_2/hs);
+    diff_v2_vfin2_2 = ((-v_ini_nasa^2*B*hs*rho0)/(sind(gamma_ref2)*hs)) * exp(-h_vfin2_2/hs) * exp(B*hs*(rho_vfin2_2-rho_raa_ini)/sind(gamma_ref2));
+    
+    D_vfin2_2 = (S*CD0/2)*(diff_rho_vfin2_2*v_vfin2_2^2 + diff_v2_vfin2_2*rho_vfin2_2);
+    
+    % Compteur pour éviter boucle infinie
+    count4 = count4 + 1;
+    if count4 > 500
+        break;
+    end
+end
+
+% NOTE: h obtenus comparés avec les graphs et ils concordent
 
