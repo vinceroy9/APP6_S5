@@ -413,3 +413,25 @@ end
 
 % NOTE: h obtenus comparés avec les graphs et ils concordent
 
+% 3. Durée t lim 
+
+% Création du vecteur de vraa qui comporte les éléments > v à h trouvé
+v_moyen_1_vec = v_raa_ref1(v_vfin1_1 < v_raa_ref1);
+v_moyen_2_vec = v_raa_ref2(v_vfin2_1 < v_raa_ref1);
+
+% Je savais pas comment le faire en une seule ligne so je refais m chose
+v_moyen_1_vec = v_moyen_1_vec(v_moyen_1_vec < v_vfin1_2);
+v_moyen_2_vec = v_moyen_2_vec(v_moyen_2_vec < v_vfin2_2);
+
+% V moyen entre les deux h
+v_moyen_1 = sum(v_moyen_1_vec)/length(v_moyen_1_vec);
+v_moyen_2 = sum(v_moyen_2_vec)/length(v_moyen_2_vec);
+
+% Calculs des tlim 
+delta_tlim1 = (h_vfin1_1 - h_vfin1_2)/(v_moyen_1*sind(gamma_ref1));
+delta_tlim2 = (h_vfin2_1 - h_vfin2_2)/(v_moyen_2*sind(gamma_ref2));
+
+% RÉSULTATS OBTENUS < 40s ON EST GOOD
+
+%% Commande de la dynamique de translation
+
