@@ -434,4 +434,29 @@ delta_tlim2 = (h_vfin2_1 - h_vfin2_2)/(v_moyen_2*sind(gamma_ref2));
 % RÉSULTATS OBTENUS < 40s ON EST GOOD
 
 %% Commande de la dynamique de translation
+tau = 0.25; %[s]
+Kp_tra = 1/tau;
+
+
+%% Commande de la dynamique de rotation
+zeta = 0.7;
+wn = 20; %[rad/s] !!!
+% wn = wn*(180/pi);
+
+Kp_rot = wn^2;
+Kd_rot = 2*zeta*wn;
+
+%% Simulation
+% Conditions initiales et temps final
+z0 = [v_ini, gamma_ini, h_ini, s_ini, theta_ini, q_ini];
+tspan = [0, 100];
+
+reltol1 = 10e-10;
+options = odeset('reltol', reltol1);
+[t, z] = ode45('capsule', tspan, z0, options);
+%%
+figure
+plot(z(:,3), z(:,1))
+set(gca,'Xdir','reverse')
+title('Vitesse selon altitude de la capsule, sans asservissement')
 
