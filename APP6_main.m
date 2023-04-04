@@ -65,17 +65,6 @@ B = CD0*S/m;                % m^2/kg
 
 %% Identification
 
-figure(1)
-plot(t,acc_mes,'kx')
-xlabel('Temps [s]')
-ylabel('Accélération (D_{aéro} / m) en [m/s^2]')
-legend('Points mesurés','Location','NorthWest')
-title('Mesures accélérométriques de la NASA avec \gamma = -90 deg')
-
-
-
-
-
 % Intégrons les données pour obtenir v(h). On cherche donc deux set de
 % données qui donne des v et des h pour des temps identiques qu'on met
 % ensemble par la suite. a->v par Trapeze et v->h par Simpson. Int
@@ -88,9 +77,6 @@ for n = 2:length(acc_mes)
     v_trap(n) = dt/2 * (acc_mes(1) + acc_mes(n) + 2*sum(acc_mes(2:n-1)));
 end
 v_trap = -v_trap + v_ini_nasa; % Pour ajouter la vitesse initiale à t = 0;
-
-% figure
-% plot(t, v_trap)
 
 % Erreur sur trapeze
 fpa_v = (acc_mes(2)-acc_mes(1))/dt; 
@@ -141,6 +127,29 @@ R2 = sum((Y_calc-mean(Y)).^2)/sum((Y-mean(Y)).^2);
 
 RMS_a_relatif = sqrt(1/length(acc_mes(1:2:end)) * sum((((a_approx-acc_mes(1:2:end)'))./acc_mes(1:2:end)').^2));
 
+% Graphiques 
+figure
+plot(t,acc_mes,'kx')
+hold on
+plot(t_simp,a_approx,'r')
+hold off
+xlabel('Temps [s]')
+ylabel('Accélération (D_{aéro} / m) en [m/s^2]')
+legend('Points mesurés','Accélération approximée','Location','NorthWest')
+title('Mesures accélérométriques de la NASA avec \gamma = -90 deg')
+
+figure
+plot(t,v_trap,'-x')
+xlabel('Temps [s]')
+ylabel('Vitesse (via Intégration) en [m/s]')
+legend('Vitesse intégrée','Location','NorthEast')
+
+figure
+plot(t_simp,h_simp,'-x')
+xlabel('Temps [s]')
+ylabel('Altitude (via Intégration) en [m]')
+legend('Altitude intégrée','Location','NorthEast')
+
 
 %% Validation de la RAA
 h_raa = linspace(h_simp(1),h_simp(end),1e4);
@@ -149,7 +158,7 @@ rho_raa = rho0 * exp(-h_raa/hs);
 rho_raa_ini = rho0 * exp(-h_ini_nasa/hs);
 v_raa = v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)/sind(gamma_ini_nasa));
 
-figure(2)
+figure
 plot(h_simp,v_trap(1:2:end),'xb')
 hold on
 plot(h_raa,v_raa,'r')
