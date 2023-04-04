@@ -136,7 +136,7 @@ R2 = sum((Y_calc-mean(Y)).^2)/sum((Y-mean(Y)).^2);
 % 5. Comparaison avec bruit de l'accelerometre + RMS absolue (a_mes-a_approx)
 % et (a_mes-a_approx)/a_mes
 
-% ????????????
+RMS_a_relatif = sqrt(1/length(acc_mes(1:2:end)) * sum((((a_approx-acc_mes(1:2:end)'))./acc_mes(1:2:end)').^2));
 
 
 %% Validation de la RAA
@@ -182,7 +182,7 @@ v_raa_ref2 =  v_ini_nasa * exp((1/2) * B * hs * (rho_raa - rho_raa_ini)./sind(ga
 P_dyn_ref1 = (1/2)* rho_raa .* v_raa_ref1.^2;
 D_aero_ref1 = P_dyn_ref1*S*CD0;
 P_dyn_max1 = max(P_dyn_ref1); % ON EST GOOD C'EST EN BAS DE 9500
-% F_ref1 = D_aero_ref1 - D_aero_max;
+F_ref1 = D_aero_ref1 - D_aero_max;
 
 % Pour vfin2 = 300 m/s
 P_dyn_ref2 = (1/2)* rho_raa .* v_raa_ref2.^2;
@@ -207,6 +207,7 @@ title('Daero selon altitude :  vfin = 300 m/s')
 xlabel('Altitude h [m]')
 ylabel('Trainee Daero [N]') 
 hold off
+
 
 % 2. Newton-Raphson
 tol = 1e-10; % Donnée dans guide étudiant
@@ -303,22 +304,22 @@ while abs(F_vfin1_2) > tol
 end
 
 % Vérification de la dérivée
-% for i = 1 : length(F_ref1)-1
-%     diff_approx(i) = (F_ref1(i+1) - F_ref1(i))/(h_raa(2)-h_raa(1));
-%     
-%     diff_rho = (-rho0/hs)*exp(-h_raa(i)/hs);
-%     diff_v2 = ((-B*hs*rho0*v_ini_nasa^2)/(sind(gamma_ref1)*hs)) * exp(-h_raa(i)/hs) * exp(B*hs*(rho_raa(i)-rho_raa_ini)/sind(gamma_ref1));
-%     
-%     D_NR1(i) = (S*CD0/2)*(diff_rho*v_raa_ref1(i)^2 + diff_v2*rho_raa(i));
-% end
+for i = 1 : length(F_ref1)-1
+    diff_approx(i) = (F_ref1(i+1) - F_ref1(i))/(h_raa(2)-h_raa(1));
+    
+    diff_rho = (-rho0/hs)*exp(-h_raa(i)/hs);
+    diff_v2 = ((-B*hs*rho0*v_ini_nasa^2)/(sind(gamma_ref1)*hs)) * exp(-h_raa(i)/hs) * exp(B*hs*(rho_raa(i)-rho_raa_ini)/sind(gamma_ref1));
+    
+    D_NR1(i) = (S*CD0/2)*(diff_rho*v_raa_ref1(i)^2 + diff_v2*rho_raa(i));
+end
 
 % Graph dérivée et approximation 
-% figure
-% plot(h_raa(1:end-1), D_NR1)
-% hold on
-% plot(h_raa(1:end-1), diff_approx)
-% legend('Dérivée trouvée analytiquement', 'Dérivée approx.')
-% title('Comparaison des dérivées')
+figure
+plot(h_raa(1:end-1), D_NR1)
+hold on
+plot(h_raa(1:end-1), diff_approx)
+legend('Dérivée trouvée analytiquement', 'Dérivée approx.')
+title('Comparaison des dérivées')
 
 % =======================     VFIN1 = 300 m/s   ========================= %
 % ===================     c'est avec gamma_ref_2   ====================== %
@@ -416,16 +417,16 @@ end
 % 3. Durée t lim 
 
 % Création du vecteur de vraa qui comporte les éléments > v à h trouvé
-v_moyen_1_vec = v_raa_ref1(v_vfin1_1 < v_raa_ref1);
-v_moyen_2_vec = v_raa_ref2(v_vfin2_1 < v_raa_ref1);
-
-% Je savais pas comment le faire en une seule ligne so je refais m chose
-v_moyen_1_vec = v_moyen_1_vec(v_moyen_1_vec < v_vfin1_2);
-v_moyen_2_vec = v_moyen_2_vec(v_moyen_2_vec < v_vfin2_2);
+% v_moyen_1_vec = v_raa_ref1(v_vfin1_1 < v_raa_ref1);
+% v_moyen_2_vec = v_raa_ref2(v_vfin2_1 < v_raa_ref1);
+% 
+% % Je savais pas comment le faire en une seule ligne so je refais m chose
+% v_moyen_1_vec = v_moyen_1_vec(v_moyen_1_vec < v_vfin1_2);
+% v_moyen_2_vec = v_moyen_2_vec(v_moyen_2_vec < v_vfin2_2);
 
 % V moyen entre les deux h
-v_moyen_1 = sum(v_moyen_1_vec)/length(v_moyen_1_vec);
-v_moyen_2 = sum(v_moyen_2_vec)/length(v_moyen_2_vec);
+v_moyen_1 = (v_vfin1_1 + v_vfin1_2)/2;
+v_moyen_2 = (v_vfin2_1 + v_vfin2_2)/2;
 
 % Calculs des tlim 
 delta_tlim1 = (h_vfin1_1 - h_vfin1_2)/(v_moyen_1*sind(gamma_ref1));
@@ -441,19 +442,20 @@ Kp_tra = 1/tau;
 %% Commande de la dynamique de rotation
 zeta = 0.7;
 wn = 20; %[rad/s] !!!
-% wn = wn*(180/pi);
 
 Kp_rot = wn^2;
 Kd_rot = 2*zeta*wn;
 
 %% Simulation
+% Sauvegarde un fichier de constantes
 % Conditions initiales et temps final
 z0 = [v_ini, gamma_ini, h_ini, s_ini, theta_ini, q_ini];
-tspan = [0, 100];
+tspan = [0, 60];
 
 reltol1 = 10e-10;
 options = odeset('reltol', reltol1);
 [t, z] = ode45('capsule', tspan, z0, options);
+
 %%
 figure
 plot(z(:,3), z(:,1))
