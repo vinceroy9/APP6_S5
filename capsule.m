@@ -48,43 +48,43 @@ function f = capsule(t, z)
     
     if ctl == 0
         delta_cmd = 0.0;
+        
     else
         % Partie asservissement translation
         delta_v_aero = v_fin1 - sqrt(v^2 + 2*mu_mars*(1/r_fin - 1/r));
-        gamma_ref = asind((0.5 * B *hs *(rho_fin- rho))/(log(1+delta_v_aero/v)));
+        gamma_ref = asin((0.5 * B *hs *(rho_fin- rho))/(log(1+delta_v_aero/v)));
         g_theta = (Pdyn*S*CLa)/(v*m);
-        theta_eq = gamma - ((cosd(gamma)*m)/(Pdyn*S*CLa))*(v^2/r - g_r);
+        theta_eq = gamma - ((cos(gamma)*m)/(Pdyn*S*CLa))*(v^2/r - g_r);
         theta_cmd = theta_eq  + (Kp_tra/g_theta)*(gamma_ref - gamma);
-%         alpha = theta_cmd - gamma;
-       
+        
         % S'assurer que theta cmd ne dépasse pas 60 deg
-        if (abs(theta_cmd) >=(60))
-            theta_cmd = 60*sign(theta_cmd);
+        if (abs(theta_cmd) >=deg2rad(60))
+            theta_cmd = deg2rad(60)*sign(theta_cmd);
         end
         
         % Partie asservissement rotation
         delta_eq = -((CMa*alpha + (d/(2*v))*CMq*q))/CMd;
         g_delta = Pdyn*S*d*CMd/J;
-        delta_cmd = delta_eq + Kp_rot*(theta_cmd - theta)/g_delta + Kd_rot*q/g_delta;
+        delta_cmd = delta_eq + Kp_rot*(theta_cmd - theta)/g_delta - Kd_rot*q/g_delta;
          
     end
     
     % Parties utilisés pour les équations d'ordre 1 finales
+    Laero = Pdyn*S*CLa*alpha;
     Daero = Pdyn * S * CD0;
     Maero = Pdyn*S*d*(CMa*alpha + d*CMq*q/(2*v) + CMd*delta_cmd);
-    Laero = Pdyn*S*CLa*alpha;
     
     % v dot
-    f(1) = -Daero/m - g_r*sind(gamma);
+    f(1) = -Daero/m - g_r*sin(gamma);
     
     % gamma dot
-    f(2) = (1/v)*(Laero/m + (v^2/r - g_r)*cosd(gamma));
+    f(2) = (1/v)*(Laero/m + (v^2/r - g_r)*cos(gamma));
     
     % h dot
-    f(3) = v * sind(gamma);
+    f(3) = v * sin(gamma);
     
     % s dot
-    f(4) = (v/r) * cosd(gamma);
+    f(4) = (v/r) * cos(gamma);
     
     % theta dot 
     f(5) = q;

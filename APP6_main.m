@@ -25,10 +25,13 @@ CMd = 0.1;              %               Coefficient de volet aéro.
 
 v_ini = 6100;           % m/s
 gamma_ini = -20.5;      % deg       !!!
+gamma_ini_rad = deg2rad(gamma_ini);
 h_ini = 120000;         % m
 s_ini = 0.0;            % deg       !!!
 theta_ini = -80;        % deg       !!!
+theta_ini_rad = deg2rad(theta_ini);
 q_ini = 0.0;            % deg/s     !!!
+
 
 % ======== Condition finales désirées ======== %
 
@@ -442,15 +445,16 @@ Kp_tra = 1/tau;
 %% Commande de la dynamique de rotation
 zeta = 0.7;
 wn = 20; %[rad/s] !!!
-
+% wn_deg = rad2deg(wn);
 Kp_rot = wn^2;
 Kd_rot = 2*zeta*wn;
 
 %% Simulation
 % Sauvegarde un fichier de constantes
 % Conditions initiales et temps final
-z0 = [v_ini, gamma_ini, h_ini, s_ini, theta_ini, q_ini];
-tspan = [0, 60];
+t_ini = 0;
+z0 = [v_ini, gamma_ini_rad, h_ini, s_ini, theta_ini_rad, q_ini];
+tspan = [0, 126];
 
 reltol1 = 10e-10;
 options = odeset('reltol', reltol1);
