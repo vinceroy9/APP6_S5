@@ -152,15 +152,11 @@ legend('Altitude intégrée','Location','NorthEast')
 
 
 %% Validation de la RAA
-h_raa = linspace(h_simp(1),h_simp(end),1e5);
+h_raa = linspace(h_simp(1),h_simp(end),1e4);
 
-% RAA - v(h) 
 rho_raa = rho0 * exp(-h_raa/hs);
 rho_raa_ini = rho0 * exp(-h_ini_nasa/hs);
 v_raa = v_ini_nasa * exp(1/2 * B * hs * (rho_raa - rho_raa_ini)/sind(gamma_ini_nasa));
-
-% RAA - a(h) sans gravité
-a_raa = 1/2 * rho_raa .* v_raa.^2 * S*CD0/m;
 
 %Graphiques
 figure
@@ -173,13 +169,13 @@ ylabel('Vitesse v [m/s]')
 legend('v(h)','RAA','Location','NorthWest')
 
 figure
-plot(h_simp,acc_mes(1:2:end),'xk')
+plot(h_simp,a_mes(1:2:end),'xk')
 hold on
-plot(h_raa,a_raa,'r')
+plot(h_raa,v_raa,'r')
 hold off
 xlabel('Altidude h [m]')
-ylabel('Accélération [m/s^2]')
-legend('a_{mes}(h)','RAA','Location','NorthEast')
+ylabel('Vitesse v [m/s]')
+legend('v(h)','RAA','Location','NorthWest')
 
 
 %% Vérification des limites structurelle de la capsule
