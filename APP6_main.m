@@ -187,7 +187,7 @@ legend('a_{mes}(h)','RAA','Location','NorthEast')
 % Exprimons la courbe Pdyn avec RAA+gravité et appliquons Newton-Rhapson
 % sur celui-ci. Note: Ce Pdyn sera en fonction de h et le delta_t_lim sera
 % fait a partir du delta_h trouver par newton-rhapson.
-
+ 
 
 % 0. Calcu de delta_v_aero
 delta_v_aero1 = v_fin1 - sqrt(v_ini^2 + 2*mu_mars*(1/(h_fin+R_mars) - 1/(h_ini+R_mars)));
