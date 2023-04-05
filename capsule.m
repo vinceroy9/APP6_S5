@@ -1,5 +1,5 @@
 function f = capsule(t, z)
-    ctl = 0; % 0: pas d'asservissement, 1: asservissement
+    ctl = 1; % 0: pas d'asservissement, 1: asservissement
     vit = 1; % 0: v =250, 1: v =300
     
     % load('data.mat')

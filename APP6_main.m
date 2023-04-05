@@ -478,7 +478,7 @@ Kd_rot = 2*zeta*wn;
 % Conditions initiales et temps final
 t_ini = 0;
 z0 = [v_ini, gamma_ini_rad, h_ini, s_ini, theta_ini_rad, q_ini, t_ini];
-tspan = [0, 112];
+tspan = [0, 111.5];
 % pour 250 : 126
 % pour 300: 112
 
@@ -487,14 +487,24 @@ options = odeset('reltol', reltol1);
 [t, z] = ode45('capsule', tspan, z0, options);
 
 %% Validation de simulation
+r_fin = R_mars + h_fin;
+rho_fin = rho0*exp(-h_fin/hs);
+rho = rho0*exp(-z(:,3)./hs);
+r = (R_mars+z(:,3));
+
+delta_v_aero = v_fin2 - sqrt(z(:,1).^2 + 2*mu_mars.*(1/r_fin - 1./r));
+gamma_ref = asin((0.5 * B *hs *(rho_fin- rho))./(log(1+delta_v_aero./z(:,1))));
 
 % Graphiques sans asservissement :
 % Gamma
 figure
+% plot(t, rad2deg(gamma_ref))
+% hold on
 plot(t,rad2deg(z(:,2)))
 ylabel('Angle [deg]')
 xlabel('Temps [s]')
 legend('\gamma (t)')
+title('\gamma en fonction du temps')
 grid on
 grid minor
 
@@ -505,6 +515,7 @@ set(gca,'Xdir','reverse')
 ylabel('Vitesse [m/s]')
 xlabel('Altitude [km]')
 legend('v(h)')
+title("Vitesse de la capsule selon l'altitude")
 grid on
 grid minor
 
@@ -517,6 +528,7 @@ hold off
 ylabel('Angles [deg]')
 xlabel('Temps [s]')
 legend('\theta(t)','\alpha(t)')
+title('\alpha et \theta en fonction du temps')
 grid on
 grid minor
 
@@ -526,11 +538,13 @@ plot(t,rad2deg(z(:,6)))
 ylabel('q [deg/s]')
 xlabel('Temps [s]')
 legend('q(t)')
+title('q en fonction du temps')
+axis([0 110 -5 5])
 grid on
 grid minor
 
 % Pdyn(t) et Daero(t)
-Pdyn_sim = 1/2 * rho0*exp(z(:,3)/hs) .* z(:,1).^2;
+Pdyn_sim = (1/2) * rho0*exp(-z(:,3)/hs) .* z(:,1).^2;
 Daero_sim = Pdyn_sim*S*CD0;
 figure
 plot(t,Pdyn_sim)
@@ -540,6 +554,7 @@ hold off
 ylabel('Amplitude')
 xlabel('Temps [s]')
 legend('P{dyn}(t) [N/m^2]', 'D_{aéro}(t) [N]')
+title('Pression dynamique et trainée en fonction du temps')
 grid on
 grid minor
 
@@ -549,5 +564,6 @@ plot(t,z(:,7))
 ylabel('Intégrale du temps [s]')
 xlabel('Temps [s]')
 legend('Intégrale du temps','Location','Best')
+title('Temps où Daero > Daero maximum')
 grid on
 grid minor
