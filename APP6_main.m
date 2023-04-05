@@ -477,8 +477,10 @@ Kd_rot = 2*zeta*wn;
 % Sauvegarde un fichier de constantes
 % Conditions initiales et temps final
 t_ini = 0;
-z0 = [v_ini, gamma_ini_rad, h_ini, s_ini, theta_ini_rad, q_ini];
-tspan = [0, 126];
+z0 = [v_ini, gamma_ini_rad, h_ini, s_ini, theta_ini_rad, q_ini, t_ini];
+tspan = [0, 112];
+% pour 250 : 126
+% pour 300: 112
 
 reltol1 = 10e-10;
 options = odeset('reltol', reltol1);

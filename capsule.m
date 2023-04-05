@@ -1,7 +1,9 @@
 function f = capsule(t, z)
     ctl = 1; % 0: pas d'asservissement, 1: asservissement
+    vit = 1; % 0: v =250, 1: v =300
     
-%     load('data.mat')
+    % load('data.mat')
+    
     % Variables d'état
     v = z(1);
     gamma = z(2);
@@ -9,6 +11,7 @@ function f = capsule(t, z)
     s = z(4);
     theta = z(5);
     q = z(6);
+    tlim = z(7);
     
     % Constantes
     m = 50;
@@ -23,6 +26,7 @@ function f = capsule(t, z)
     CMq = -0.05;
     CMd = 0.10;
     B = (S*CD0)/m;
+    D_aero_max = 2650;
     
     % Paramètre hs et rho0
     hs = 1.101715085089048e+04;
@@ -38,6 +42,7 @@ function f = capsule(t, z)
     r_fin = R_mars + h_fin;
     rho_fin = rho0*exp(-h_fin/hs);
     v_fin1 = 250;
+    v_fin2 = 300;
     
     % Équations
     rho = rho0*exp(-h/hs);
@@ -51,7 +56,13 @@ function f = capsule(t, z)
         
     else
         % Partie asservissement translation
-        delta_v_aero = v_fin1 - sqrt(v^2 + 2*mu_mars*(1/r_fin - 1/r));
+        if vit == 0
+            v_fin = v_fin1;
+        elseif vit == 1
+            v_fin = v_fin2;
+        end
+        
+        delta_v_aero = v_fin - sqrt(v^2 + 2*mu_mars*(1/r_fin - 1/r));
         gamma_ref = asin((0.5 * B *hs *(rho_fin- rho))/(log(1+delta_v_aero/v)));
         g_theta = (Pdyn*S*CLa)/(v*m);
         theta_eq = gamma - ((cos(gamma)*m)/(Pdyn*S*CLa))*(v^2/r - g_r);
@@ -93,7 +104,7 @@ function f = capsule(t, z)
     f(6) = (1/J) * Maero;
     
     % Daero > 2650
-%     f(7) = Daero > D_aero_max;
+    f(7) = Daero > D_aero_max;
     
     f = f';
 
