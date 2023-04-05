@@ -486,9 +486,68 @@ reltol1 = 10e-10;
 options = odeset('reltol', reltol1);
 [t, z] = ode45('capsule', tspan, z0, options);
 
-%%
-figure
-plot(z(:,3), z(:,1))
-set(gca,'Xdir','reverse')
-title('Vitesse selon altitude de la capsule, sans asservissement')
+%% Validation de simulation
 
+% Graphiques sans asservissement :
+% Gamma
+figure
+plot(t,rad2deg(z(:,2)))
+ylabel('Angle [deg]')
+xlabel('Temps [s]')
+legend('\gamma (t)')
+grid on
+grid minor
+
+% v(h)
+figure
+plot(z(:,3)/1e3, z(:,1))
+set(gca,'Xdir','reverse')
+ylabel('Vitesse [m/s]')
+xlabel('Altitude [km]')
+legend('v(h)')
+grid on
+grid minor
+
+% theta(t) et alpha(t)
+figure
+plot(t,rad2deg(z(:,5)))
+hold on
+plot(t,rad2deg(z(:,5) - z(:,2)))
+hold off
+ylabel('Angles [deg]')
+xlabel('Temps [s]')
+legend('\theta(t)','\alpha(t)')
+grid on
+grid minor
+
+% q(t)
+figure
+plot(t,rad2deg(z(:,6)))
+ylabel('q [deg/s]')
+xlabel('Temps [s]')
+legend('q(t)')
+grid on
+grid minor
+
+% Pdyn(t) et Daero(t)
+Pdyn_sim = 1/2 * rho0*exp(z(:,3)/hs) .* z(:,1).^2;
+Daero_sim = Pdyn_sim*S*CD0;
+figure
+plot(t,Pdyn_sim)
+hold on
+plot(t,Daero_sim)
+hold off
+ylabel('Amplitude')
+xlabel('Temps [s]')
+legend('P{dyn}(t) [N/m^2]', 'D_{aéro}(t) [N]')
+grid on
+grid minor
+
+% Delta_tlim
+figure
+plot(t,z(:,7))
+ylabel('Intégrale du temps [s]')
+xlabel('Temps [s]')
+legend('Intégrale du temps','Location','Best')
+grid on
+grid minor
