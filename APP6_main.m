@@ -498,13 +498,16 @@ gamma_ref = asin((0.5 * B *hs *(rho_fin- rho))./(log(1+delta_v_aero./z(:,1))));
 % Graphiques sans asservissement :
 % Gamma
 figure
-% plot(t, rad2deg(gamma_ref))
-% hold on
+plot(t, rad2deg(gamma_ref))
+hold on
 plot(t,rad2deg(z(:,2)))
+hold on 
+plot(t, ones(length(t), 1)*gamma_ref2)
 ylabel('Angle [deg]')
 xlabel('Temps [s]')
-legend('\gamma (t)')
+legend('\gamma ref', '\gamma (t)', '\gamma ref RAA')
 title('\gamma en fonction du temps')
+axis([0 110 -25 -10])
 grid on
 grid minor
 
